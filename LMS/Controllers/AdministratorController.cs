@@ -65,8 +65,15 @@ namespace LMS.Controllers
     /// <returns>The JSON result</returns>
     public IActionResult GetProfessors(string subject)
     {
-   
-      return Json(null);
+        using (Team94LMSContext db = new Team94LMSContext())
+        {
+                var profs =
+                        from p in db.Professors
+                        where p.Department == subject
+                        select new { lname = p.LastName, fname = p.FirstName, uid = p.UId };
+           return Json(profs.ToArray());
+        }
+                
     }
 
 
