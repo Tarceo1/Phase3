@@ -485,51 +485,100 @@ namespace LMS.Controllers
         /// <returns>A unique uID that is not be used by anyone else</returns>
         public string CreateNewUser(string fName, string lName, DateTime DOB, string SubjectAbbrev, string role)
         {
-
+            string uID = getNewUID();
             using (Team94LMSContext db = new Team94LMSContext())
             {
-
+                
                 if (role == "Administrator")
-                {
+                {                  
                     Admins newUser = new Admins();
+                    newUser.UId = uID;
                     newUser.FirstName = fName;
                     newUser.LastName = lName;
                     newUser.Dob = DOB;
-                    db.Add(newUser);
+                    db.Admins.Add(newUser);
                     db.SaveChanges();
                 }
                 else if (role == "Professor")
                 {
                     Professors newUser = new Professors();
+                    newUser.UId = uID;
                     newUser.FirstName = fName;
                     newUser.LastName = lName;
                     newUser.Dob = DOB;
                     newUser.Department = SubjectAbbrev;
-                    db.Add(newUser);
+                    db.Professors.Add(newUser);
                     db.SaveChanges();
-
                 }
                 else
                 {
                     Students newUser = new Students();
+                    newUser.UId = uID;
                     newUser.FirstName = fName;
                     newUser.LastName = lName;
                     newUser.Dob = DOB;
                     newUser.Major = SubjectAbbrev;
-                    db.Add(newUser);
+                    db.Students.Add(newUser);
                     db.SaveChanges();
-
-                }
-          
-
-               // return Json(new { success = true });
+                }                                   
             }
 
-
-
-            return "";
+            return uID;
         }
 
+        private string getNewUID()
+        {
+            
+            using (Team94LMSContext db = new Team94LMSContext())
+            {
+                //Using functional syntax as "take" is not available with the SQL style syntax
+                List<string> maxUIDs = new List<string>();
+
+                /* 
+                 * REFACTOR LATER!! 
+                 */
+
+                //Get the highest uID
+                var uIDStu =
+                    db.Students.Select(u => u.UId).OrderByDescending(u => u).Take(1);
+                
+                
+                // Check for a populated value
+                if(uIDStu.Count() == 1)
+                {
+                    //Add to the possible max uIDs if one is present
+                    maxUIDs.Add(uIDStu.Single());
+                }
+
+                var uIDProf =
+                   db.Professors.Select(u => u.UId).OrderByDescending(u => u).Take(1);
+                if (uIDProf.Count() == 1)
+                {
+                    maxUIDs.Add(uIDProf.Single());
+                }
+
+                var uIDAdmin =
+                   db.Admins.Select(u => u.UId).OrderByDescending(u => u).Take(1);
+
+                if (uIDAdmin.Count() == 1)
+                {
+                    maxUIDs.Add(uIDAdmin.Single());
+                }
+
+                if(maxUIDs.Count() != 0)
+                {
+                    //slice off the numerical portion of the greatest uID and add 1
+                    int idNum = int.Parse(maxUIDs.OrderByDescending(u => u).First().Substring(1))+1;
+                    //add the u back in and pad the number with 0's if necessary
+                    return "u" + idNum.ToString().PadLeft(7, '0');
+                }
+                //First user registered corner case
+                else
+                {
+                    return "u0000000";
+                }
+            }
+        }
         /*******End code to modify********/
 
 
