@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -40,8 +41,13 @@ namespace LMS.Controllers
     /// <returns>The JSON result</returns>
     public IActionResult GetCourses(string subject)
     {
-      
-      return Json(null);
+        using (Team94LMSContext db = new Team94LMSContext()) {
+                var courses =
+                          from c in db.Courses
+                          where c.Department == subject
+                          select new { name = c.Name, number = c.Number };
+               return Json(courses.ToArray());
+        }     
     }
 
 
