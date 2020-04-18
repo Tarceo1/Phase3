@@ -130,12 +130,49 @@ namespace LMS.Controllers
         {
             using (Team94LMSContext db = new Team94LMSContext())
             {
-                //var conflict =
-                   // from b in db.Classes;
-                    //where (end.Subtract(start). && start < b.End)
-                Classes c = new Classes();
-                
-                return Json(new { success = false });
+                var timeConflict =
+                    from b in db.Classes
+                    where ((start > b.Start && start < b.End) || (end > b.Start && end < b.End)) 
+                    && location == b.Loc && season == b.Semester && (uint)year == b.Year 
+                    select b;
+
+                if(timeConflict.Count() != 0)
+                {
+                    return Json(new { success = false });
+                }
+
+                var course =
+                    from b in db.Courses
+                    where (b.Department == subject && b.Number == number)
+                    select b.CourseId;
+
+                var courseConflict =
+                    from x in db.Classes
+                    where course.Contains(x.Course) && season == x.Semester && year == x.Year
+                    select x;
+
+                if (courseConflict.Count() != 0)
+                {
+                    return Json(new { success = false });
+                }
+                try
+                {
+                    Classes c = new Classes();
+                    c.Course = course.Single();
+                    c.Semester = season;
+                    c.Year = (uint)year;
+                    c.Start = start;
+                    c.End = end;
+                    c.Loc = location;
+                    c.Prof = instructor;
+                    db.Classes.Add(c);
+                    db.SaveChanges();
+                } catch (DbUpdateException)
+                {
+                    return Json(new { success = false });
+                }
+
+                return Json(new { success = true });
             }
         }
 
