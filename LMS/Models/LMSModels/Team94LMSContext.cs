@@ -31,7 +31,7 @@ namespace LMS.Models.LMSModels
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseMySql("Server=atr.eng.utah.edu;User Id=u1271272;Password=dontCare;Database=Team94LMS");
+                optionsBuilder.UseMySql("Server=atr.eng.utah.edu;User Id=u1275806;Password=DONTCARE;Database=Team94LMS");
             }
         }
 
@@ -148,7 +148,7 @@ namespace LMS.Models.LMSModels
 
                 entity.Property(e => e.End)
                     .HasColumnName("end")
-                    .HasColumnType("time");
+                    .HasColumnType("datetime");
 
                 entity.Property(e => e.Loc)
                     .IsRequired()
@@ -167,7 +167,7 @@ namespace LMS.Models.LMSModels
 
                 entity.Property(e => e.Start)
                     .HasColumnName("start")
-                    .HasColumnType("time");
+                    .HasColumnType("datetime");
 
                 entity.Property(e => e.Year).HasColumnName("year");
 
@@ -237,6 +237,9 @@ namespace LMS.Models.LMSModels
                 entity.HasKey(e => new { e.Student, e.Class })
                     .HasName("PRIMARY");
 
+                entity.HasIndex(e => e.Class)
+                    .HasName("FC_Class_idx");
+
                 entity.Property(e => e.Student)
                     .HasColumnName("student")
                     .HasColumnType("char(8)");
@@ -247,6 +250,18 @@ namespace LMS.Models.LMSModels
                     .IsRequired()
                     .HasColumnName("grade")
                     .HasColumnType("varchar(2)");
+
+                entity.HasOne(d => d.ClassNavigation)
+                    .WithMany(p => p.Enrollment)
+                    .HasForeignKey(d => d.Class)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FC_Class");
+
+                entity.HasOne(d => d.StudentNavigation)
+                    .WithMany(p => p.Enrollment)
+                    .HasForeignKey(d => d.Student)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FC_Student");
             });
 
             modelBuilder.Entity<Professors>(entity =>
@@ -327,7 +342,7 @@ namespace LMS.Models.LMSModels
 
             modelBuilder.Entity<Submissions>(entity =>
             {
-                entity.HasKey(e => new { e.Student, e.Assignment, e.Time })
+                entity.HasKey(e => new { e.Student, e.Assignment })
                     .HasName("PRIMARY");
 
                 entity.HasIndex(e => e.Assignment)
@@ -339,16 +354,16 @@ namespace LMS.Models.LMSModels
 
                 entity.Property(e => e.Assignment).HasColumnName("assignment");
 
-                entity.Property(e => e.Time)
-                    .HasColumnName("time")
-                    .HasColumnType("datetime");
-
                 entity.Property(e => e.Content)
                     .IsRequired()
                     .HasColumnName("content")
                     .HasColumnType("varchar(8192)");
 
                 entity.Property(e => e.Score).HasColumnName("score");
+
+                entity.Property(e => e.Time)
+                    .HasColumnName("time")
+                    .HasColumnType("datetime");
 
                 entity.HasOne(d => d.AssignmentNavigation)
                     .WithMany(p => p.Submissions)
