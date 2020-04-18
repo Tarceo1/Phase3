@@ -67,7 +67,7 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetMyClasses(string uid)
     {
-   
+        
       return Json(null);
     }
 

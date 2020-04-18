@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using LMS.Models.LMSModels; // Added when 'protected TeamXLMSContext db' was uncommented
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 
 namespace LMS.Controllers
@@ -69,7 +73,7 @@ namespace LMS.Controllers
                 return Json(result.ToArray());
             }
 
-           // return Json(new[] { new { name = "None", subject = "NONE" } });
+            // return Json(new[] { new { name = "None", subject = "NONE" } });
         }
 
 
@@ -87,8 +91,30 @@ namespace LMS.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetCatalog()
         {
+            using (db)
+            {
+                var result =
+                    from d in db.Departments
+                    select new
+                    {
+                        subject = d.Abbr,
+                        dname = d.Name,
+                        courses =
+                    db.Courses.Where(x => x.Department == d.Abbr).
+                    Select(x => new { number = x.Number, cname = x.Name }).ToArray()
+                    };
 
-            return Json(null);
+                foreach (var v in result)
+                {
+                    Debug.WriteLine(v.dname + " " + v.subject);
+                    foreach (var x in v.courses)
+                    {
+                        Debug.WriteLine(x.cname + " " + x.number);
+                    }
+                }
+
+                return Json(result.ToArray());
+            }
         }
 
         /// <summary>
@@ -107,8 +133,25 @@ namespace LMS.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetClassOfferings(string subject, int number)
         {
+            using (db)
+            {
+                var result =
+                    from d in db.Classes
+                    join p in db.Professors
+                    on d.Prof equals p.UId
+                    select new
+                    {
+                        season = d.Semester,
+                        year = d.Year,
+                        location = d.Loc,
+                        start = d.Start.ToString("hh:mm:ss"),
+                        end = d.End.ToString("hh:mm:ss"),
+                        fname = p.FirstName,
+                        lname = p.LastName
+                    };
+                return Json(result.ToArray());
+            }
 
-            return Json(null);
         }
 
         /// <summary>
@@ -125,10 +168,41 @@ namespace LMS.Controllers
         /// <returns>The assignment contents</returns>
         public IActionResult GetAssignmentContents(string subject, int num, string season, int year, string category, string asgname)
         {
+            using (db)
+            {
+                var result =
+                    from a in db.Assignments
+                    join c in db.AssignmentCatagories
+                    on a.Catagory equals c.CataId
+                    select new
+                    {
+                        a,
+                        c
+                    }
+                    into assWithCate
+                    join cla in db.Classes
+                    on assWithCate.c.Class equals cla.ClassId
+                    select new
+                    {
+                        ass = assWithCate.a,
+                        cata = assWithCate.c,
+                        cla
+                    }
+                    into assWithClass
+                    join cour in db.Courses
+                    on assWithClass.cla.Course equals cour.CourseId
+                    where cour.Department == subject &&
+                        cour.Number == num &&
+                        assWithClass.cla.Semester == season &&
+                        assWithClass.cla.Year == year &&
+                        assWithClass.cata.Name == category &&
+                        assWithClass.ass.Name == asgname
+                    select assWithClass.ass.Content;
 
-            return Content("");
+                string toReturn = result.Single();
+                return Content(toReturn);
+            }
         }
-
 
         /// <summary>
         /// This method does NOT return JSON. It returns plain text (containing html).
@@ -146,8 +220,43 @@ namespace LMS.Controllers
         /// <returns>The submission text</returns>
         public IActionResult GetSubmissionText(string subject, int num, string season, int year, string category, string asgname, string uid)
         {
+            using (db)
+            {
+                var result =
+                    from a in db.Assignments
+                    join c in db.AssignmentCatagories
+                    on a.Catagory equals c.CataId
+                    select new
+                    {
+                        a,
+                        c
+                    }
+                    into assWithCate
+                    join cla in db.Classes
+                    on assWithCate.c.Class equals cla.ClassId
+                    select new
+                    {
+                        ass = assWithCate.a,
+                        cata = assWithCate.c,
+                        cla
+                    }
+                    into assWithClass
+                    join cour in db.Courses
+                    on assWithClass.cla.Course equals cour.CourseId
+                    where cour.Department == subject &&
+                        cour.Number == num &&
+                        assWithClass.cla.Semester == season &&
+                        assWithClass.cla.Year == year &&
+                        assWithClass.cata.Name == category &&
+                        assWithClass.ass.Name == asgname
+                    join s in db.Submissions
+                    on assWithClass.ass.AssignId equals s.Assignment
+                    where s.Student == uid
+                    select s.Content;
 
-            return Content("");
+                string toReturn = result.Single();
+                return Content(toReturn);
+            }
         }
 
 
@@ -169,8 +278,87 @@ namespace LMS.Controllers
         /// </returns>
         public IActionResult GetUser(string uid)
         {
+            using (db)
+            {
+                if (db.Students.Select(x => x.UId).Where(x => x == uid).Count() == 1)
+                    return getStudent(uid);
 
+                if (db.Professors.Select(x => x.UId).Where(x => x == uid).Count() == 1)
+                    return getProf(uid);
+
+                if (db.Admins.Select(x => x.UId).Where(x => x == uid).Count() == 1)
+                    return getAdmin(uid);
+            }
             return Json(new { success = false });
+        }
+
+        /// <summary>
+        /// Private method used to query the Admin specific database for
+        /// user access. For more info, see GetUser
+        /// </summary>
+        private IActionResult getAdmin(string uid)
+        {
+            using (db)
+            {
+                var result =
+                    from a in db.Admins
+                    where a.UId == uid
+                    select new
+                    {
+                        fname = a.FirstName,
+                        lname = a.LastName,
+                        uid = a.UId
+                    };
+
+                return Json(result.Single());
+            }
+        }
+
+        /// <summary>
+        /// Private method used to query the Professor specific database for
+        /// user access. For more info, see GetUser
+        /// </summary>
+        private IActionResult getProf(string uid)
+        {
+            using (db)
+            {
+                var result =
+                    from a in db.Professors
+                    where a.UId == uid
+                    select new
+                    {
+                        fname = a.FirstName,
+                        lname = a.LastName,
+                        uid = a.UId,
+                        department = a.Department
+                    };
+
+                return Json(result.Single());
+            }
+        }
+
+        /// <summary>
+        /// Private method used to query the Student specific database for
+        /// user access. For more info, see GetUser
+        /// </summary>
+        private IActionResult getStudent(string uid)
+        {
+            using (db)
+            {
+                var result =
+                    from s in db.Students
+                    where s.UId == uid
+                    select new
+                    {
+                        fname = s.FirstName,
+                        lname = s.LastName,
+                        uid = s.UId,
+                        department = s.Major
+                    };
+                var debug = result.Single();
+                Debug.WriteLine($"{debug.department} {debug.fname} {debug.lname} {debug.uid}");
+                return Json(result.Single());
+            }
         }
 
 
