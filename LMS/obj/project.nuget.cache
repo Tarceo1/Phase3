@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "bpA6mtSq2wGxNwlKiutl6vohwRa1K2dtv1w4rbGBGz39DIEi3S4/Nl/hTxTE4QLe4RhPqp46zVeP82ZmtXz9hg==",
+  "dgSpecHash": "lwf7q+NQls/MQqoIIDy2WwbtbSXYzNzW/zIWWcN6j6T2B6MKhXw3WgXNmT1M2qrlM9FnlCTnqpbfTiaSdT7SGA==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Todd\\Source\\Repos\\Phase3\\LMS\\LMS.csproj",
+  "projectFilePath": "C:\\Users\\Todd\\source\\repos\\Phase3\\LMS\\LMS.csproj",
   "expectedPackageFiles": [
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\microsoft.aspnet.webapi.client\\5.2.6\\microsoft.aspnet.webapi.client.5.2.6.nupkg.sha512",
     "C:\\Users\\Todd\\.nuget\\packages\\microsoft.aspnetcore\\2.2.0\\microsoft.aspnetcore.2.2.0.nupkg.sha512",
