@@ -157,9 +157,33 @@ namespace LMS.Controllers
             using (Team94LMSContext db = new Team94LMSContext())
             {
                 // TODO need to add number of assignments
-                // Also If the "category" parameter is null, return all assignments in the class
+                // Might need to refactor this
 
-                var assigns =
+                if(category == null) 
+                {
+                    var assigns =
+                    from t1 in db.Courses
+                    join t2 in db.Classes
+                    on t1.CourseId equals t2.Course
+                    join t3 in db.AssignmentCatagories
+                    on t2.ClassId equals t3.Class
+                    join t4 in db.Assignments
+                    on t3.CataId equals t4.Catagory
+                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == year 
+                    select new
+                    {
+                        aname = t4.Name,
+                        cname = t3.Name,
+                        due = t4.Due,
+                        submissions = 0 // TODO
+                    };
+
+                    return Json(assigns.ToArray());
+
+                }
+                else
+                {
+                    var assigns =
                     from t1 in db.Courses
                     join t2 in db.Classes
                     on t1.CourseId equals t2.Course
@@ -172,13 +196,19 @@ namespace LMS.Controllers
                     {
                         aname = t4.Name,
                         cname = t3.Name,
-                        due = t4.Due
+                        due = t4.Due,
+                        submissions = 0 // TODO
                     };
+
+                    return Json(assigns.ToArray());
+
+                }
+
+
                 // int submissions = assigns.Count();
 
                 // assigns.Append(submissions.ToString());
 
-                return Json(assigns.ToArray());
 
 
             }
