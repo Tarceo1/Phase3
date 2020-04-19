@@ -256,8 +256,14 @@ namespace LMS.Controllers
                     on assWithClass.ass.AssignId equals s.Assignment
                     where s.Student == uid
                     select s.Content;
-
-                string toReturn = result.Single();
+                string toReturn;
+                if (result.Count() > 0)
+                {
+                   toReturn = result.Single();
+                } else
+                {
+                    toReturn = null;
+                }
                 return Content(toReturn);
             }
         }
