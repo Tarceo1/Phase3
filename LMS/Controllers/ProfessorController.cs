@@ -117,7 +117,7 @@ namespace LMS.Controllers
                     on t2.ClassId equals t3.Class
                     join t4 in db.Students
                     on t3.Student equals t4.UId
-                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == year
+                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == (uint)year
                     select new
                     {
                         fname = t4.FirstName,
@@ -162,23 +162,26 @@ namespace LMS.Controllers
                 if(category == null) 
                 {
                     var assigns =
-                    from t1 in db.Courses
-                    join t2 in db.Classes
-                    on t1.CourseId equals t2.Course
-                    join t3 in db.AssignmentCatagories
-                    on t2.ClassId equals t3.Class
-                    join t4 in db.Assignments
-                    on t3.CataId equals t4.Catagory
-                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == year 
-                    select new
-                    {
-                        aname = t4.Name,
-                        cname = t3.Name,
-                        due = t4.Due,
-                        submissions = 0 // TODO
-                    };
+                        from t1 in db.Courses
+                        join t2 in db.Classes
+                        on t1.CourseId equals t2.Course
+                        join t3 in db.AssignmentCatagories
+                        on t2.ClassId equals t3.Class
+                        join t4 in db.Assignments
+                        on t3.CataId equals t4.Catagory
+                        join t5 in db.Submissions
+                        on t4.AssignId equals t5.Assignment
+                        where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == (uint)year
+                        //group t4 by t5.Student into studGroup
+                        select new
+                        {
+                            aname = t4.Name,
+                            cname = t3.Name,
+                            due = t4.Due,
+                            submissions = 0 //TODO
+                        };
 
-                    return Json(assigns.ToArray());
+                        return Json(assigns.ToArray());
 
                 }
                 else
@@ -191,7 +194,7 @@ namespace LMS.Controllers
                     on t2.ClassId equals t3.Class
                     join t4 in db.Assignments
                     on t3.CataId equals t4.Catagory
-                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == year && t3.Name == category
+                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == (uint)year && t3.Name == category
                     select new
                     {
                         aname = t4.Name,
@@ -241,7 +244,7 @@ namespace LMS.Controllers
                     on t1.CourseId equals t2.Course
                     join t3 in db.AssignmentCatagories
                     on t2.ClassId equals t3.Class
-                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == year
+                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == (uint)year
                     select new
                     {
                         name = t3.Name,
@@ -288,7 +291,43 @@ namespace LMS.Controllers
         public IActionResult CreateAssignment(string subject, int num, string season, int year, string category, string asgname, int asgpoints, DateTime asgdue, string asgcontents)
         {
 
-            return Json(new { success = false });
+            using (Team94LMSContext db = new Team94LMSContext())
+            {
+                try
+                {
+                    var catIDs = 
+                        from t1 in db.Courses
+                        where t1.Department == subject && t1.Number == num
+                        join t2 in db.Classes
+                        on t1.CourseId equals t2.Course
+                        where t2.Semester == season && t2.Year == (uint)year
+                        join t3 in db.AssignmentCatagories
+                        on t2.ClassId equals t3.Class
+                        join t4 in db.Assignments
+                        on t3.CataId equals t4.Catagory
+                        where t3.Name == category
+                        select t4.Catagory;
+
+
+                    Assignments newAsign = new Assignments();
+                    newAsign.Points = (uint)asgpoints;
+                    newAsign.Due = asgdue;
+                    newAsign.Content = asgcontents;
+                    newAsign.Catagory = catIDs.Single();
+                    newAsign.Name = asgname;
+                   
+                    db.Assignments.Add(newAsign);
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
+                catch (Exception)
+                {
+                    return Json(new { success = false });
+                }
+            }
+
+
+
         }
 
 
@@ -338,8 +377,6 @@ namespace LMS.Controllers
                     };
 
                 return Json(submissions.ToArray());
-
-
             }
         }
 
