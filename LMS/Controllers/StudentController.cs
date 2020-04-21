@@ -126,15 +126,6 @@ namespace LMS.Controllers
                     on cla.ClassId equals cata.Class
                     join ass in db.Assignments
                     on cata.CataId equals ass.Catagory
-                    //join sub in db.Submissions.DefaultIfEmpty()
-                    //on ass.AssignId equals sub.Assignment
-                    //where sub.Student == uid
-                    //into assAndCate
-                    //join roll in db.Enrollment
-                    //on cla.ClassId equals roll.Class
-                    //where roll.Student == uid
-                    //join sub in db.Submissions
-                    //on roll.Student equals sub.Student
                    
                 select new {id = ass.AssignId, aname = ass.Name, cname = cata.Name, due = ass.Due /*score = sub.Score*/ };
 
