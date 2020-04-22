@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LMS.Controllers
 {
@@ -117,7 +119,7 @@ namespace LMS.Controllers
                     on t2.ClassId equals t3.Class
                     join t4 in db.Students
                     on t3.Student equals t4.UId
-                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == year
+                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == (uint)year
                     select new
                     {
                         fname = t4.FirstName,
@@ -129,7 +131,6 @@ namespace LMS.Controllers
 
                 return Json(studs.ToArray());
             }
-
 
         }
 
@@ -156,59 +157,49 @@ namespace LMS.Controllers
         {
             using (Team94LMSContext db = new Team94LMSContext())
             {
-                // TODO need to add number of assignments
-                // Might need to refactor this
-
                 if(category == null) 
                 {
                     var assigns =
-                    from t1 in db.Courses
-                    join t2 in db.Classes
-                    on t1.CourseId equals t2.Course
-                    join t3 in db.AssignmentCatagories
-                    on t2.ClassId equals t3.Class
-                    join t4 in db.Assignments
-                    on t3.CataId equals t4.Catagory
-                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == year 
-                    select new
-                    {
-                        aname = t4.Name,
-                        cname = t3.Name,
-                        due = t4.Due,
-                        submissions = 0 // TODO
-                    };
+                        from t1 in db.Courses
+                        join t2 in db.Classes
+                        on t1.CourseId equals t2.Course
+                        join t3 in db.AssignmentCatagories
+                        on t2.ClassId equals t3.Class
+                        join t4 in db.Assignments
+                        on t3.CataId equals t4.Catagory
+                        where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == (uint)year
+                        select new
+                        {
+                            aname = t4.Name,
+                            cname = t3.Name,
+                            due = t4.Due,
+                            submissions = t4.Submissions.Count()  
+                        };
 
-                    return Json(assigns.ToArray());
-
+                        return Json(assigns.ToArray());
                 }
                 else
                 {
                     var assigns =
-                    from t1 in db.Courses
-                    join t2 in db.Classes
-                    on t1.CourseId equals t2.Course
-                    join t3 in db.AssignmentCatagories
-                    on t2.ClassId equals t3.Class
-                    join t4 in db.Assignments
-                    on t3.CataId equals t4.Catagory
-                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == year && t3.Name == category
-                    select new
-                    {
-                        aname = t4.Name,
-                        cname = t3.Name,
-                        due = t4.Due,
-                        submissions = 0 // TODO
-                    };
+                        from t1 in db.Courses
+                        join t2 in db.Classes
+                        on t1.CourseId equals t2.Course
+                        join t3 in db.AssignmentCatagories
+                        on t2.ClassId equals t3.Class
+                        join t4 in db.Assignments
+                        on t3.CataId equals t4.Catagory
+                        where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == (uint)year && t3.Name == category
+                        select new
+                        {
+                            aname = t4.Name,
+                            cname = t3.Name,
+                            due = t4.Due,
+                            submissions = t4.Submissions.Count()
+                        };
 
-                    return Json(assigns.ToArray());
+                        return Json(assigns.ToArray());
 
                 }
-
-
-                // int submissions = assigns.Count();
-
-                // assigns.Append(submissions.ToString());
-
 
 
             }
@@ -241,7 +232,7 @@ namespace LMS.Controllers
                     on t1.CourseId equals t2.Course
                     join t3 in db.AssignmentCatagories
                     on t2.ClassId equals t3.Class
-                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == year
+                    where t1.Department == subject && t1.Number == num && t2.Semester == season && t2.Year == (uint)year
                     select new
                     {
                         name = t3.Name,
@@ -268,7 +259,35 @@ namespace LMS.Controllers
         public IActionResult CreateAssignmentCategory(string subject, int num, string season, int year, string category, int catweight)
         {
 
-            return Json(new { success = false });
+            using (Team94LMSContext db = new Team94LMSContext())
+            {
+                try
+                {
+                    var classID =
+                        from t1 in db.Courses
+                        where t1.Department == subject && t1.Number == num
+                        join t2 in db.Classes
+                        on t1.CourseId equals t2.Course
+                        where t2.Semester == season && t2.Year == (uint)year
+                        select t2.ClassId;
+
+                    AssignmentCatagories newCat = new AssignmentCatagories();
+                    newCat.Class = classID.Single();
+                    newCat.Name = category;
+                    newCat.Weight = (uint)catweight;
+
+                    db.AssignmentCatagories.Add(newCat);
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
+                catch (DbUpdateException e)
+                {
+                    Debug.WriteLine(e.Message);
+                    Debug.WriteLine(e.InnerException.Message);
+                    return Json(new { success = false });
+                }
+            }
+
         }
 
         /// <summary>
@@ -288,7 +307,43 @@ namespace LMS.Controllers
         public IActionResult CreateAssignment(string subject, int num, string season, int year, string category, string asgname, int asgpoints, DateTime asgdue, string asgcontents)
         {
 
-            return Json(new { success = false });
+            using (Team94LMSContext db = new Team94LMSContext())
+            {
+                try
+                {
+                    var catIDs = 
+                        from t1 in db.Courses
+                        where t1.Department == subject && t1.Number == num
+                        join t2 in db.Classes
+                        on t1.CourseId equals t2.Course
+                        where t2.Semester == season && t2.Year == (uint)year
+                        join t3 in db.AssignmentCatagories
+                        on t2.ClassId equals t3.Class
+                        join t4 in db.Assignments
+                        on t3.CataId equals t4.Catagory
+                        where t3.Name == category
+                        select t4.Catagory;
+
+
+                    Assignments newAsign = new Assignments();
+                    newAsign.Points = (uint)asgpoints;
+                    newAsign.Due = asgdue;
+                    newAsign.Content = asgcontents;
+                    newAsign.Catagory = catIDs.Single();
+                    newAsign.Name = asgname;
+                   
+                    db.Assignments.Add(newAsign);
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
+                catch (DbUpdateException e)
+                {
+                    Debug.WriteLine(e.Message);
+                    Debug.WriteLine(e.InnerException.Message);
+                    return Json(new { success = false });
+                }
+            }
+
         }
 
 
@@ -334,12 +389,9 @@ namespace LMS.Controllers
                         uid = t6.UId,
                         time = t5.Time,
                         score = t5.Score
-
                     };
 
                 return Json(submissions.ToArray());
-
-
             }
         }
 
@@ -358,8 +410,46 @@ namespace LMS.Controllers
         /// <returns>A JSON object containing success = true/false</returns>
         public IActionResult GradeSubmission(string subject, int num, string season, int year, string category, string asgname, string uid, int score)
         {
+            using (Team94LMSContext db = new Team94LMSContext())
+            {
+                try
+                {
+                    var assignSub =
+                        from t1 in db.Courses
+                        where t1.Department == subject && t1.Number == num
+                        join t2 in db.Classes
+                        on t1.CourseId equals t2.Course
+                        where t2.Semester == season && t2.Year == (uint)year
+                        join t3 in db.AssignmentCatagories
+                        on t2.ClassId equals t3.Class
+                        join t4 in db.Assignments
+                        on t3.CataId equals t4.Catagory
+                        where t3.Name == category && t4.Name == asgname
+                        join t5 in db.Submissions
+                        on t4.AssignId equals t5.Assignment
+                        where t5.Student == uid
+                        select t5.Assignment;
 
-            return Json(new { success = true });
+                    var submission =
+                            from sub in db.Submissions
+                            where sub.Student == uid && sub.Assignment == assignSub.Single()
+                            select sub;
+
+                    foreach (Submissions sub in submission)
+                    {
+                        sub.Score = (uint)score;
+                    }
+
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
+                catch (DbUpdateException e)
+                {
+                    Debug.WriteLine(e.Message);
+                    Debug.WriteLine(e.InnerException.Message);
+                    return Json(new { success = false });
+                }
+            }
         }
 
 
@@ -395,10 +485,7 @@ namespace LMS.Controllers
 
                 return Json(classes.ToArray());
             }
-
-
         }
-
 
         /*******End code to modify********/
 
