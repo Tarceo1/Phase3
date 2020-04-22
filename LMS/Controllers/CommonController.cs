@@ -68,12 +68,8 @@ namespace LMS.Controllers
                 var result = from p in db.Departments
                              select new { name = p.Name, subject = p.Abbr };
 
-
-                // TODO: Do not return this hard-coded array.
                 return Json(result.ToArray());
             }
-
-            // return Json(new[] { new { name = "None", subject = "NONE" } });
         }
 
 
@@ -103,15 +99,6 @@ namespace LMS.Controllers
                     db.Courses.Where(x => x.Department == d.Abbr).
                     Select(x => new { number = x.Number, cname = x.Name }).ToArray()
                     };
-
-                foreach (var v in result)
-                {
-                    Debug.WriteLine(v.dname + " " + v.subject);
-                    foreach (var x in v.courses)
-                    {
-                        Debug.WriteLine(x.cname + " " + x.number);
-                    }
-                }
 
                 return Json(result.ToArray());
             }
@@ -290,10 +277,10 @@ namespace LMS.Controllers
             using (db)
             {
                 if (db.Students.Select(x => x.UId).Where(x => x == uid).Count() == 1)
-                    return getStudent(uid);
+                    return GetStudent(uid);
 
                 if (db.Professors.Select(x => x.UId).Where(x => x == uid).Count() == 1)
-                    return getProf(uid);
+                    return GetProf(uid);
 
                 if (db.Admins.Select(x => x.UId).Where(x => x == uid).Count() == 1)
                     return getAdmin(uid);
@@ -327,7 +314,7 @@ namespace LMS.Controllers
         /// Private method used to query the Professor specific database for
         /// user access. For more info, see GetUser
         /// </summary>
-        private IActionResult getProf(string uid)
+        private IActionResult GetProf(string uid)
         {
             using (db)
             {
@@ -346,11 +333,11 @@ namespace LMS.Controllers
             }
         }
 
-        /// <summary>
+        /// <summary>w
         /// Private method used to query the Student specific database for
         /// user access. For more info, see GetUser
         /// </summary>
-        private IActionResult getStudent(string uid)
+        private IActionResult GetStudent(string uid)
         {
             using (db)
             {
