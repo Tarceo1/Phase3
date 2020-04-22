@@ -17,9 +17,6 @@ namespace LMS.Controllers
 
         /*******Begin code to modify********/
 
-        // TODO: Uncomment and change 'X' after you have scaffoled
-
-
         protected Team94LMSContext db;
 
         public CommonController()
@@ -34,8 +31,6 @@ namespace LMS.Controllers
          *          The "right" way is through Dependency Injection via the constructor 
          *          (look this up if interested).
         */
-
-        // TODO: Uncomment and change 'X' after you have scaffoled
 
         public void UseLMSContext(Team94LMSContext ctx)
         {
@@ -352,7 +347,6 @@ namespace LMS.Controllers
                         department = s.Major
                     };
                 var debug = result.Single();
-                Debug.WriteLine($"{debug.department} {debug.fname} {debug.lname} {debug.uid}");
                 return Json(result.Single());
             }
         }

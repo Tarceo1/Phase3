@@ -275,10 +275,10 @@ namespace LMS.Controllers
             using (db)
             {
                 List<string> result = db.Enrollment.Where(g => g.Student == uid).Select(g => g.Grade).DefaultIfEmpty().ToList();
-                if(result.Count() == 0)
-                {
-                    return Json(new {gpa = 0.0});
-                }
+                //if(result.Count() == 0)
+                //{
+                //    return Json(new {gpa = 4.0});
+                //}
 
                 double gradeTotal = 0;
                 double gradePoints = 0;
@@ -329,6 +329,10 @@ namespace LMS.Controllers
                             break;
                     }
                     gradeTotal++;
+                }
+                if(gradeTotal == 0)
+                {
+                    return Json(new { gpa = 0 });
                 }
                 return Json(new { gpa = gradePoints/gradeTotal });
             }        

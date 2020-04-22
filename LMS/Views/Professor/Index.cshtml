@@ -51,9 +51,9 @@
         },
         error: function (ex) {
           var r = jQuery.parseJSON(response.responseText);
-          alert("Message: " + r.Message);
-          alert("StackTrace: " + r.StackTrace);
-          alert("ExceptionType: " + r.ExceptionType);
+          //alert("Message: " + r.Message);
+          //alert("StackTrace: " + r.StackTrace);
+          //alert("ExceptionType: " + r.ExceptionType);
         }
       });
 
@@ -70,7 +70,7 @@
         data: { uid: '@User.Identity.Name' },
         success: function (data, status) {
 
-          alert(JSON.stringify(data));
+          //alert(JSON.stringify(data));
 
           $.each(data, function (i, item) {
 
@@ -91,9 +91,9 @@
             td.appendChild(document.createTextNode(item.season + " " + item.year ));
             tr.appendChild(td);
 
-            //var td = document.createElement("td");
-            //td.appendChild(document.createTextNode(item.grade));
-            //tr.appendChild(td);
+            var td = document.createElement("td");
+            td.appendChild(document.createTextNode(item.grade));
+            tr.appendChild(td);
 
             newBody.appendChild(tr);
 
